@@ -4,12 +4,12 @@ use crate::{
     parse::rsa_oid,
     PublicKey, RSAPrivateKey, RSAPublicKey,
 };
-use num_bigint::{BigUint, ToBigInt, ModInverse};
+use num_bigint::{BigUint, ModInverse, ToBigInt};
 use num_traits::Zero;
 use pem::{EncodeConfig, LineEnding};
 use simple_asn1::{to_der, ASN1Block, BigInt};
 use std::prelude::v1::*;
-use std::{vec, format};
+use std::{format, vec};
 
 const BYTE_BIT_SIZE: usize = 8;
 const DEFAULT_ENCODING_CONFIG: EncodeConfig = EncodeConfig {
@@ -18,7 +18,7 @@ const DEFAULT_ENCODING_CONFIG: EncodeConfig = EncodeConfig {
 
 #[cfg(feature = "pem")]
 /// Trait for encoding the private key in the PEM format
-/// 
+///
 /// Important: Encoding multi prime keys isn't supported. See [RustCrypto/RSA#66](https://github.com/RustCrypto/RSA/issues/66) for more info
 pub trait PrivateKeyPemEncoding: PrivateKeyEncoding {
     const PKCS1_HEADER: &'static str;
@@ -227,7 +227,7 @@ fn to_bigint(value: &crate::BigUint) -> simple_asn1::BigInt {
 }
 
 /// Trait for encoding the private key in the PKCS#1/PKCS#8 format
-/// 
+///
 /// Important: Encoding multi prime keys isn't supported. See [RustCrypto/RSA#66](https://github.com/RustCrypto/RSA/issues/66) for more info
 pub trait PrivateKeyEncoding {
     /// Encodes a Private key to into `PKCS1` bytes.
@@ -235,7 +235,7 @@ pub trait PrivateKeyEncoding {
     /// This data will be `base64` encoded which would be used
     /// following a `-----BEGIN <name> PRIVATE KEY-----` header.
     ///
-    /// <https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem> 
+    /// <https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem>
     fn to_pkcs1(&self) -> Result<Vec<u8>>;
 
     /// Encodes a Private key to into `PKCS8` bytes.
@@ -277,11 +277,12 @@ impl PrivateKeyEncoding for RSAPrivateKey {
             ASN1Block::Integer(0, to_bigint(&exponent))
         }));
         // Encode coefficient
-        let coefficient = (&self.primes[1])
-            .mod_inverse(&self.primes[0])
-            .ok_or(Error::EncodeError {
-                reason: "mod inverse failed".into()
-            })?;
+        let coefficient =
+            (&self.primes[1])
+                .mod_inverse(&self.primes[0])
+                .ok_or(Error::EncodeError {
+                    reason: "mod inverse failed".into(),
+                })?;
         blocks.push(ASN1Block::Integer(
             0,
             BigInt::from_signed_bytes_le(&coefficient.to_signed_bytes_le()),
